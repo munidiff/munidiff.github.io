@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdn.metroui.org.ua/v4/css/metro-all.min.css" rel="stylesheet">
+    <link href="css/prism-coy-without-shadows.css" rel="stylesheet" />
+
+    <!-- <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" /> -->
+</head>
+<body onload="init()">
+    <div class="container">
+        <button class="button primary" onclick="fetchData()">Fetch Data</button>
+        <div id="data-container" class="mt-4"></div>
+        <ul data-role="tabs" data-tabs-type="pills" data-expand="true">
+            <li><a href="#munidiff">munidiff</a></li>
+            <li><a href="#diff">diff</a></li>
+
+            <li><a href="#graphdiff">diagram diff</a></li>
+        </ul>
+        <div id="diff" class="frame p-4" style="display:none">
+            <pre class="line-numbers" style="white-space: pre-wrap;"><code class="language-diff diff-highlight">
+--- a/org.eclipse.epsilon.modiff.demo/timeline/exampleShop.model
++++ b/org.eclipse.epsilon.modiff.demo/timeline/exampleShop.model
+@@ -15,7 +15,12 @@
+           status=&quot;pending&quot;/&gt;
+     &lt;/queue&gt;
+     &lt;queue jobId=&quot;job2&quot;
+-        description=&quot;broken phone screen&quot;/&gt;
++        description=&quot;dead battery&quot;&gt;
++      &lt;status
++          statusId=&quot;st2&quot;
++          status=&quot;in progress&quot;
++          lastModified=&quot;2023/07/24&quot;/&gt;
++    &lt;/queue&gt;
+   &lt;/workers&gt;
+   &lt;workers name=&quot;Bob&quot;
+       mainSkill=&quot;Microsoldering&quot;/&gt;
+            </code></pre>
+        </div>
+        <div id="munidiff" class="frame p-4" style="display:none">
+            <pre class="line-numbers" style="white-space: pre-wrap;"><code class="language-diff diff-highlight">
+--- a/org.eclipse.epsilon.modiff.demo/timeline/exampleShop.model
++++ b/org.eclipse.epsilon.modiff.demo/timeline/exampleShop.model
+@@ @@
+    containerSource:NodeSingleValueContainment {
++    singleValueContainment *--> null
+-    singleValueContainment *--> A:NodeSingleValueReference
+    }
+@@ @@
+    containerDestination:NodeSingleValueContainment {
++    singleValueContainment *--> null
+-    singleValueContainment *--> B:Node
+    }
+@@ @@
+-A:NodeSingleValueReference {
+-    name: source
+-    singleValuedReference --> B:Node
+-}
+@@ @@
+-B:Node {
+-    name: destination
+-}</code></pre>
+        </div>
+        <div id="graphdiff" class="frame p-4" style="display:none">
+            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" height="226px" preserveAspectRatio="none" style="width:262px;height:226px;background:#FFFFFF;" version="1.1" viewBox="0 0 262 226" width="262px" zoomAndPan="magnify"><defs/><g><g id="elem_job2"><rect fill="#FFFFE6" height="76.3945" style="stroke:#181818;stroke-width:1.0;" width="248" x="7" y="7"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="54" x="104" y="22.1318">job2:Job</text><line style="stroke:#181818;stroke-width:1.0;" x1="8" x2="254" y1="27.0986" y2="27.0986"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="74" x="13" y="44.2305">jobId = job2</text><path d="M23.3333,55.2959 L20,55.2959 L20,51.9626 C20,51.4102 19.5523,50.9626 19,50.9626 C18.4477,50.9626 18,51.4102 18,51.9626 L18,55.2959 L14.6667,55.2959 C14.1143,55.2959 13.6667,55.7436 13.6667,56.2959 C13.6667,56.8482 14.1143,57.2959 14.6667,57.2959 L18,57.2959 L18,60.6292 C18,61.1816 18.4477,61.6292 19,61.6292 C19.5523,61.6292 20,61.1816 20,60.6292 L20,57.2959 L23.3333,57.2959 C23.8857,57.2959 24.3333,56.8482 24.3333,56.2959 C24.3333,55.7436 23.8857,55.2959 23.3333,55.2959 " fill="#218732" style="stroke:;stroke-width:0.0;stroke-dasharray:;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4" x="25" y="60.3291">&#160;</text><text fill="#228833" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="165" x="29" y="60.3291">description = dead battery</text><path d="M24.3333,72.3945 C24.3333,72.9469 23.8857,73.3945 23.3333,73.3945 L14.6667,73.3945 C14.1143,73.3945 13.6667,72.9469 13.6667,72.3945 C13.6667,71.8422 14.1143,71.3945 14.6667,71.3945 L23.3333,71.3945 C23.8857,71.3945 24.3333,71.8422 24.3333,72.3945 " fill="#CB3210" style="stroke:;stroke-width:0.0;stroke-dasharray:;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4" x="25" y="76.4277">&#160;</text><text fill="#CC3311" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="220" x="29" y="76.4277">description = broken phone screen</text></g><g id="elem_st2"><rect fill="#99E6A6" height="76.3945" style="stroke:#181818;stroke-width:1.0;" width="176" x="43" y="143"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="63" x="99.5" y="158.1318">st2:Status</text><line style="stroke:#181818;stroke-width:1.0;" x1="44" x2="218" y1="163.0986" y2="163.0986"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="85" x="49" y="180.2305">statusId = st2</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="125" x="49" y="196.3291">status = in progress</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="164" x="49" y="212.4277">lastModified = 2023/07/24</text></g><!--link job2 to st2--><g id="link_job2_st2"><path codeLine="14" d="M131,95.33 C131,113.91 131,118.32 131,136.87 " fill="none" id="job2-st2" style="stroke:#228833;stroke-width:1.0;"/><polygon fill="#228833" points="131,83.33,127,89.33,131,95.33,135,89.33,131,83.33" style="stroke:#228833;stroke-width:1.0;"/><polygon fill="#228833" points="131,142.87,135,133.87,131,137.87,127,133.87,131,142.87" style="stroke:#228833;stroke-width:1.0;"/><text fill="#228833" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="36" x="91.4563" y="132.2334">status</text></g><!--SRC=[TL3BJiCm43mtNx5ARaXLMWULD0evq1D8dE1UEV6sSH_UoEiW5SI_upYbI97OsywCPdQ7ZzfqqiepMEgDsf0rQ64HyGsd-e2DUoAhqBwtkZaQP8Pb58q4n0UgHV52TGoIOLWWsVd15Nn5is4yzgpWCN01ALb_Of5NPI94dcTPqQByk6oxKyzRrdjJL6KwI2ee6pgHBQwwIY4tLdTEa_5-2gM2MZg7zbAcGLbD_3URB5ikh_vdRVuD68MJWDhI4GrqBHa4Jo2QMyxtxNzsedXpqlKS6l0h9EirhkIr00vSQC1pVuZVjJUtjBU-qG4_INQlfFHEuw0M2v6bYuTKtFkqMMZsRZwl89wqCjhzNXQF5upS3m00]--></g></svg>
+        </div>
+    </div>
+
+    <script src="https://cdn.metroui.org.ua/v4/js/metro.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-diff.min.js"></script> <!-- Diff language support -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script> -->
+
+    <script src="js/app.js"></script>
+</body>
+</html>
