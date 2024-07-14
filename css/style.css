@@ -14,3 +14,7 @@ pre.line-numbers {
     border-radius: 5px; /* Optional: round corners */
     padding: 10px; /* Padding around the code */
 }
+
+svg {
+    margin-top: 20px;
+}
