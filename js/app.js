@@ -6,10 +6,13 @@ function init() {
 }
 
 async function fetchData() {
-    var repo = getRepoDetails($("#urlInput").val());
+    // extract details from url
+    const repo = getRepoDetails($("#urlInput").val());
 
-    var timeline = await getTimelineMetadata(repo);
+    // load timeline config file from repository
+    const timeline = await getTimelineMetadata(repo);
 
+    // metamodels in the timeline
     var metamodels = [];
     for (const metamodel of timeline.metamodels) {
         var metamodelUrl = getFileUrl(repo, metamodel, repo.commit);
@@ -18,38 +21,122 @@ async function fetchData() {
     }
     repo.metamodels = metamodels;
 
-    var modelName = "org.eclipse.epsilon.modiff.demo/timeline/exampleShop.model"
+    // list of commits
+    axios.get(getCommitsUrl(repo), {
+        headers: {
+          'Authorization': 'Bearer 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'
+        }
+      }).then(function (response) {
+        repo.commits = response.data;
 
-    var previousCommit = getPreviousCommit(repo);
+        // display the list of commits
+        const container = document.getElementById('commitslist');
+        container.innerHTML = '';
 
-    var fromModel = await getFileContents(getFileUrl(repo, modelName, previousCommit.sha));
-    var toModel = await getFileContents(getFileUrl(repo, modelName, repo.commit));
+        repo.commits.forEach(commit => {
+            console.log(commit);
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <div class="card-header">
+                    <img src="${commit.author.avatar_url}" alt="${commit.author.login}" class="avatar p-1" style="width:32px;height:32px;margin-right:10px"></div>
+                <div class="card-content p-2">
+                    <p><a href="${commit.author.html_url}" target="_blank">${commit.author.login}</a> authored on ${formatCommitDate(commit.commit.author.date)}.
+                    <a href="${commit.html_url}" target="_blank">${commit.sha.substring(0,7)}</a></p>
+                </div>
+            `;
 
-    var request = {
-        modelName: modelName,
-        fromModel: fromModel,
-        toModel: toModel,
-        metamodels: metamodels
-    }
-    console.log(request);
+            const link = document.createElement('a');
+            link.href = '#'; // Prevent default link behavior
+            link.textContent = commit.commit.message;
 
-    // Send request to Google Cloud Function
-    axios.post('https://europe-west9-delta-vial-428212-f3.cloudfunctions.net/timeline-modiff', request)
-        .then(function (response) {
-            var diffcode = document.getElementById('diffcode');
-            diffcode.innerHTML = escapeSpecialChars(response.data["diff"]);
-            Prism.highlightElement(diffcode);
+            // Add click event listener to call showDiffData with the file name
+            link.addEventListener('click', function() {
+                showCommitDetails(repo, timeline, commit.sha)
+            });
+            card.children[0].appendChild(link);
 
-            var munidiffcode = document.getElementById('munidiffcode');
-            munidiffcode.innerHTML = escapeSpecialChars(response.data["textual-munidiff"]);
-            Prism.highlightElement(munidiffcode);
-
-            var diffDiagram = document.getElementById('svgdiff');
-            diffDiagram.innerHTML = response.data["graphical-munidiff"]
-        })
-        .catch(function (error) {
-            console.error(error);
+            container.appendChild(card);
         });
+    });
+
+    showCommitDetails(repo, timeline, repo.commit);
+}
+
+async function showCommitDetails(repo, timeline, commit) {
+
+    var response = await axios.get(getCommitUrl(repo, commit), {
+        headers: {
+          'Authorization': 'Bearer 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'
+        }
+    });
+    repo.commitData = response.data;
+
+    const commitDetails = document.getElementById('commitDetails');
+    commitDetails.innerHTML = '';
+
+    const header = document.createElement('div');
+    header.innerHTML = `
+        <h2>${repo.commitData.commit.message}</h2>
+        <p>Committed by <a href="${repo.commitData.author.html_url}" target="_blank">${repo.commitData.author.login}</a> on ${formatCommitDate(repo.commitData.commit.author.date)}.
+        <a href="${repo.commitData.html_url}" target="_blank">${repo.commitData.sha.substring(0,7)}</a></p>
+        <p>List of changed model files:</p>
+    `;
+    commitDetails.appendChild(header);
+
+    // display the list of model files (with the extensions specified in the timeline)
+    const changedFiles = repo.commitData.files.map(file => file.filename);
+
+    const list = document.createElement('ul');
+    list.className = 'group-list';
+
+    changedFiles.forEach(file => {
+        if (!endsWithExtension(file, timeline.model_extensions)) {
+            return;
+        }
+
+        const listItem = document.createElement('li');
+        listItem.className = 'list-group-item';
+
+        // Create an anchor element
+        const link = document.createElement('a');
+        link.href = '#'; // Prevent default link behavior
+        link.textContent = file;
+
+        // Add click event listener to call showDiffData with the file name
+        link.addEventListener('click', function() {
+            showDiffData(repo, file);
+        });
+
+        listItem.appendChild(link);
+        list.appendChild(listItem);
+    });
+
+    commitDetails.appendChild(list);
+}
+
+const formatter = new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZoneName: 'short',
+    hour12: true // Use 12-hour format with AM/PM
+});
+
+function formatCommitDate(date) {
+    return formatter.format(new Date(date));
+}
+
+function endsWithExtension(filename, extensions) {
+    for (const extension of extensions) {
+        if (filename.endsWith(extension)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 function getPreviousCommit(repo) {
@@ -79,11 +166,46 @@ function getRepoDetails(url) {
         commit: commit
     };
 
-    axios.get(getCommitsUrl(metadata)).then(function (response) {
-        metadata.commits = response.data;
-    });
-
     return metadata;
+}
+
+async function showDiffData(metadata, filename) {
+
+    var previousCommit = getPreviousCommit(metadata);
+
+    var fromModel = await getFileContents(getFileUrl(metadata, filename, previousCommit.sha));
+    var toModel = await getFileContents(getFileUrl(metadata, filename, metadata.commit));
+
+    var request = {
+        modelName: filename,
+        fromModel: fromModel,
+        toModel: toModel,
+        metamodels: metadata.metamodels
+    }
+    console.log(request);
+
+    // Send request to Google Cloud Function
+    axios.post('https://europe-west9-delta-vial-428212-f3.cloudfunctions.net/timeline-modiff', request)
+        .then(function (response) {
+            console.log(response.data);
+
+            var diffHeader = document.getElementById('diffheader');
+            diffHeader.innerHTML = `Differences for ${filename}`;
+
+            var diffcode = document.getElementById('diffcode');
+            diffcode.innerHTML = escapeSpecialChars(response.data["diff"]);
+            Prism.highlightElement(diffcode);
+
+            var munidiffcode = document.getElementById('munidiffcode');
+            munidiffcode.innerHTML = escapeSpecialChars(response.data["textual-munidiff"]);
+            Prism.highlightElement(munidiffcode);
+
+            var diffDiagram = document.getElementById('svgdiff');
+            diffDiagram.innerHTML = response.data["graphical-munidiff"]
+        })
+        .catch(function (error) {
+            console.error(error);
+        });
 }
 
 async function getTimelineMetadata(repo) {
@@ -95,7 +217,11 @@ async function getTimelineMetadata(repo) {
 
 async function getFileContents(url) {
     try {
-        const response = await axios.get(url);
+        const response = await axios.get(url, {
+            headers: {
+              'Authorization': 'Bearer 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'
+            }
+          });
         const fileContentBase64 = response.data.content;
         const fileContent = buffer.Buffer.from(fileContentBase64, 'base64').toString('utf-8');
 
@@ -111,8 +237,8 @@ function getTimelineUrl(repo) {
     return `https://api.github.com/repos/${repo.owner}/${repo.repo}/contents/timeline.json`;
 }
 
-function getCommitUrl(repo) {
-    return `https://api.github.com/repos/${repo.owner}/${repo.repo}/commits/${repo.commit}`;
+function getCommitUrl(repo, commit) {
+    return `https://api.github.com/repos/${repo.owner}/${repo.repo}/commits/${commit}`;
 }
 
 function getCommitsUrl(repo) {
