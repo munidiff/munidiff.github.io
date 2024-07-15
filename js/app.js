@@ -1,4 +1,7 @@
 // app.js
+const axiosInstance = axios.create({
+    baseURL: 'https://api.github.com'
+});
 
 function init() {
     // Initialize Metro UI tabs
@@ -22,11 +25,7 @@ async function fetchData() {
     repo.metamodels = metamodels;
 
     // list of commits
-    axios.get(getCommitsUrl(repo), {
-        headers: {
-          'Authorization': 'Bearer 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'
-        }
-      }).then(function (response) {
+    axiosInstance.get(getCommitsUrl(repo)).then(function (response) {
         repo.commits = response.data;
 
         // display the list of commits
@@ -65,11 +64,7 @@ async function fetchData() {
 
 async function showCommitDetails(repo, timeline, commit) {
 
-    var response = await axios.get(getCommitUrl(repo, commit), {
-        headers: {
-          'Authorization': 'Bearer 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'
-        }
-    });
+    var response = await axiosInstance.get(getCommitUrl(repo, commit));
     repo.commitData = response.data;
 
     const commitDetails = document.getElementById('commitDetails');
@@ -217,11 +212,7 @@ async function getTimelineMetadata(repo) {
 
 async function getFileContents(url) {
     try {
-        const response = await axios.get(url, {
-            headers: {
-              'Authorization': 'Bearer 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'
-            }
-          });
+        const response = await axiosInstance.get(url);
         const fileContentBase64 = response.data.content;
         const fileContent = buffer.Buffer.from(fileContentBase64, 'base64').toString('utf-8');
 
@@ -234,20 +225,20 @@ async function getFileContents(url) {
 
 
 function getTimelineUrl(repo) {
-    return `https://api.github.com/repos/${repo.owner}/${repo.repo}/contents/timeline.json`;
+    return `/repos/${repo.owner}/${repo.repo}/contents/timeline.json`;
 }
 
 function getCommitUrl(repo, commit) {
-    return `https://api.github.com/repos/${repo.owner}/${repo.repo}/commits/${commit}`;
+    return `/repos/${repo.owner}/${repo.repo}/commits/${commit}`;
 }
 
 function getCommitsUrl(repo) {
-    return `https://api.github.com/repos/${repo.owner}/${repo.repo}/commits`;
+    return `/repos/${repo.owner}/${repo.repo}/commits`;
 }
 
 
 function getFileUrl(repo, file, commit) {
-    return `https://api.github.com/repos/${repo.owner}/${repo.repo}/contents/${file}?ref=${commit}`;
+    return `/repos/${repo.owner}/${repo.repo}/contents/${file}?ref=${commit}`;
 }
 
 function generateAPICommitUrl(githubUrl) {
@@ -259,7 +250,7 @@ function generateAPICommitUrl(githubUrl) {
     const repo = parts[1];
     const commit = parts[3];
 
-    return `https://api.github.com/repos/${owner}/${repo}/commits/${commit}`;
+    return `/repos/${owner}/${repo}/commits/${commit}`;
 }
 
 function escapeSpecialChars(str) {
