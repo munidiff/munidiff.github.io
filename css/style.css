@@ -18,3 +18,8 @@ pre.line-numbers {
 svg {
     margin-top: 20px;
 }
+
+#commitslist {
+    max-height: 90vh;
+    overflow-y: scroll;
+}
