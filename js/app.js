@@ -6,6 +6,16 @@ const axiosInstance = axios.create({
 function init() {
     // Initialize Metro UI tabs
     Metro.init();
+
+    // Parse the URL query parameters
+    const queryParams = new URLSearchParams(window.location.search);
+
+    // Check if the 'url' parameter exists
+    const urlParam = queryParams.get('url');
+    if (urlParam) {
+        // Set the 'url' parameter value as the input value
+        document.getElementById('urlInput').value = urlParam;
+    }
 }
 
 async function fetchData() {
