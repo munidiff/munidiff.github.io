@@ -1,11 +1,10 @@
 // app.js
-const debug = false;
+const debug = true;
 
 const axiosInstance = axios.create({
     baseURL: 'https://api.github.com',
     timeout: 10000, // Set a timeout (optional)
-    headers: {
-    }
+    headers: getHeaders()
 });
 
 function init() {
@@ -20,6 +19,34 @@ function init() {
     if (urlParam) {
         // Set the 'url' parameter value as the input value
         document.getElementById('urlInput').value = urlParam;
+    }
+}
+
+async function getHeaders() {
+    // Fetch the token from the backend
+    const token = await fetchToken();
+
+    var result = {};
+    if (token) {
+        // Set the Authorization header
+        result = {
+            "Authorization": `Bearer ${token}`
+        };
+        if (debug) {console.log('Token: ' + token);}
+    }
+    else {
+        if (debug) {console.log('No token found');}
+    }
+    return result;
+}
+
+async function fetchToken() {
+    try {
+        const response = await axios.get('https://europe-north1-delta-vial-428212-f3.cloudfunctions.net/token');
+        return response.data; // Assuming the function returns the token directly
+    } catch (error) {
+        console.error('Error fetching token:', error);
+        return null;
     }
 }
 
