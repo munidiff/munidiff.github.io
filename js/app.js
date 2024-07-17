@@ -1,6 +1,13 @@
 // app.js
+const debug = false;
+
 const axiosInstance = axios.create({
-    baseURL: 'https://api.github.com'
+    baseURL: 'https://api.github.com',
+    timeout: 10000, // Set a timeout (optional)
+    headers: {
+        // just a public token with no real permissions to increase rate limit
+        'Authorization': 'Bearer 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'
+    }
 });
 
 function init() {
@@ -43,7 +50,6 @@ async function fetchData() {
         container.innerHTML = '';
 
         repo.commits.forEach(commit => {
-            console.log(commit);
             const card = document.createElement('div');
             card.className = 'card';
             card.innerHTML = `
@@ -59,7 +65,7 @@ async function fetchData() {
             link.href = '#'; // Prevent default link behavior
             link.textContent = commit.commit.message;
 
-            // Add click event listener to call showDiffData with the file name
+            // Add click event listener with the file name
             link.addEventListener('click', function() {
                 showCommitDetails(repo, timeline, commit.sha)
             });
@@ -75,22 +81,22 @@ async function fetchData() {
 async function showCommitDetails(repo, timeline, commit) {
 
     var response = await axiosInstance.get(getCommitUrl(repo, commit));
-    repo.commitData = response.data;
+    const commitData = response.data;
 
     const commitDetails = document.getElementById('commitDetails');
     commitDetails.innerHTML = '';
 
     const header = document.createElement('div');
     header.innerHTML = `
-        <h2>${repo.commitData.commit.message}</h2>
-        <p>Committed by <a href="${repo.commitData.author.html_url}" target="_blank">${repo.commitData.author.login}</a> on ${formatCommitDate(repo.commitData.commit.author.date)}.
-        <a href="${repo.commitData.html_url}" target="_blank">${repo.commitData.sha.substring(0,7)}</a></p>
+        <h2>${commitData.commit.message}</h2>
+        <p>Committed by <a href="${commitData.author.html_url}" target="_blank">${commitData.author.login}</a> on ${formatCommitDate(commitData.commit.author.date)}.
+        <a href="${commitData.html_url}" target="_blank">${commitData.sha.substring(0,7)}</a></p>
         <p>List of changed model files:</p>
     `;
     commitDetails.appendChild(header);
 
     // display the list of model files (with the extensions specified in the timeline)
-    const changedFiles = repo.commitData.files.map(file => file.filename);
+    const changedFiles = commitData.files.map(file => file.filename);
 
     const list = document.createElement('ul');
     list.className = 'group-list';
@@ -107,17 +113,58 @@ async function showCommitDetails(repo, timeline, commit) {
         const link = document.createElement('a');
         link.href = '#'; // Prevent default link behavior
         link.textContent = file;
+        link.className = "modelFile";
+        const linkId = removeNonAlphaNumeric(file);
+        link.setAttribute("id", linkId);
 
         // Add click event listener to call showDiffData with the file name
         link.addEventListener('click', function() {
-            showDiffData(repo, file);
+            showDiffData(repo, file, commit);
         });
 
         listItem.appendChild(link);
+
+        const dropdown = document.createElement('div');
+        dropdown.innerHTML = `<div
+            id="dropdown_${linkId}"
+            data-role="dropdown"
+            data-toggle-element="#${linkId}"
+            data-no-close="true">
+                <div class="row">
+                    <div class="cell-6">
+                        <ul data-role="tabs" data-tabs-type="pills" data-expand="true">
+                            <li><a href="#munidiff_${linkId}">munidiff</a></li>
+                            <li><a href="#diff_${linkId}">diff</a></li>
+                        </ul>
+                        <div id="munidiff_${linkId}" class="frame p-4" style="display:none">
+                            <pre class="line-numbers" style="white-space: pre-wrap;"><code id="munidiffcode_${linkId}" class="language-diff diff-highlight"></code></pre>
+                        </div>
+                        <div id="diff_${linkId}" class="frame p-4" style="display:none">
+                            <pre class="line-numbers" style="white-space: pre-wrap;"><code id="diffcode_${linkId}" class="language-diff diff-highlight"></code></pre>
+                        </div>
+                    </div>
+                    <div id="diagramdiff" class="cell-6">
+                        <ul data-role="tabs" data-tabs-type="pills" data-expand="true">
+                            <li><a href="#diagramdiff">diagram diff</a></li>
+                        </ul>
+                        <div id="svgdiff_${linkId}">
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+
+        listItem.appendChild(dropdown);
+
         list.appendChild(listItem);
     });
 
-    commitDetails.appendChild(list);
+    const modelsList = document.getElementById("modelsList")
+    modelsList.innerHTML = '';
+    modelsList.appendChild(list);
+}
+
+function removeNonAlphaNumeric(str) {
+    return str.replace(/[^a-zA-Z0-9]/g, '');
 }
 
 const formatter = new Intl.DateTimeFormat('en-US', {
@@ -144,11 +191,10 @@ function endsWithExtension(filename, extensions) {
     return false;
 }
 
-function getPreviousCommit(repo) {
+function getPreviousCommit(commits, commit) {
     var previousCommit = null;
-    var commits = repo.commits;
     for (var i = 0; i < commits.length; i++) {
-        if (commits[i].sha == repo.commit) {
+        if (commits[i].sha == commit) {
             previousCommit = commits[i + 1];
             break;
         }
@@ -174,12 +220,20 @@ function getRepoDetails(url) {
     return metadata;
 }
 
-async function showDiffData(metadata, filename) {
+async function showDiffData(metadata, filename, commit) {
 
-    var previousCommit = getPreviousCommit(metadata);
+    const linkId = removeNonAlphaNumeric(filename);
+
+    var diffcode = document.getElementById('diffcode_' + linkId);
+    if (diffcode.textContent.trim().length > 0) {
+        if (debug) {console.log('Request already processed');}
+        return;
+    }
+
+    var previousCommit = getPreviousCommit(metadata.commits, commit);
 
     var fromModel = await getFileContents(getFileUrl(metadata, filename, previousCommit.sha));
-    var toModel = await getFileContents(getFileUrl(metadata, filename, metadata.commit));
+    var toModel = await getFileContents(getFileUrl(metadata, filename, commit));
 
     var request = {
         modelName: filename,
@@ -187,25 +241,22 @@ async function showDiffData(metadata, filename) {
         toModel: toModel,
         metamodels: metadata.metamodels
     }
-    console.log(request);
+    if (debug) {console.log(request);}
 
     // Send request to Google Cloud Function
     axios.post('https://europe-west9-delta-vial-428212-f3.cloudfunctions.net/timeline-modiff', request)
         .then(function (response) {
-            console.log(response.data);
+            if (debug) {console.log(response.data);}
 
-            var diffHeader = document.getElementById('diffheader');
-            diffHeader.innerHTML = `Differences for ${filename}`;
-
-            var diffcode = document.getElementById('diffcode');
+            var diffcode = document.getElementById('diffcode_' + linkId);
             diffcode.innerHTML = escapeSpecialChars(response.data["diff"]);
             Prism.highlightElement(diffcode);
 
-            var munidiffcode = document.getElementById('munidiffcode');
+            var munidiffcode = document.getElementById('munidiffcode_' + linkId);
             munidiffcode.innerHTML = escapeSpecialChars(response.data["textual-munidiff"]);
             Prism.highlightElement(munidiffcode);
 
-            var diffDiagram = document.getElementById('svgdiff');
+            var diffDiagram = document.getElementById('svgdiff_' + linkId);
             diffDiagram.innerHTML = response.data["graphical-munidiff"]
         })
         .catch(function (error) {
@@ -265,22 +316,4 @@ function generateAPICommitUrl(githubUrl) {
 
 function escapeSpecialChars(str) {
     return str.replace(/&/g, '&amp;').replace(/>/g, '&gt;').replace(/</g, '&lt;');
-}
-
-function displayData(users) {
-    const container = document.getElementById('data-container');
-    container.innerHTML = '';
-
-    users.forEach(user => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-            <div class="card-header">${user.login}</div>
-            <div class="card-content p-2">
-                <img src="${user.avatar_url}" alt="${user.login}" class="avatar">
-                <p><a href="${user.html_url}" target="_blank">View Profile</a></p>
-            </div>
-        `;
-        container.appendChild(card);
-    });
 }

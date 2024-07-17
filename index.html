@@ -25,37 +25,15 @@
                 <div id="commitslist" class="cell-2"></div>
                 <div id="diffviews" class="cell-10">
                     <div class="row">
-                        <div id="commitDetails" class="cell-10"></div>
+                        <div id="commitDetails"></div>
                     </div>
                     <div class="row">
-                        <h3 id="diffheader" style="margin-top:20px"></h3>
-                    </div>
-                    <div class="row">
-                        <div id="difftabs" class="cell-6">
-                            <ul data-role="tabs" data-tabs-type="pills" data-expand="true">
-                                <li><a href="#munidiff">munidiff</a></li>
-                                <li><a href="#diff">diff</a></li>
-                            </ul>
-                            <div id="munidiff" class="frame p-4" style="display:none">
-                                <pre class="line-numbers" style="white-space: pre-wrap;"><code id="munidiffcode" class="language-diff diff-highlight"></code></pre>
-                            </div>
-                            <div id="diff" class="frame p-4" style="display:none">
-                                <pre class="line-numbers" style="white-space: pre-wrap;"><code id="diffcode" class="language-diff diff-highlight"></code></pre>
-                            </div>
-                        </div>
-                        <div id="diagramdiff" class="cell-6">
-                            <ul data-role="tabs" data-tabs-type="pills" data-expand="true">
-                                <li><a href="#diagramdiff">diagram diff</a></li>
-                            </ul>
-                            <div id="svgdiff">
-                            </div>
-                        </div>
+                        <div id="modelsList" class="cell"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
     <script src="https://cdn.metroui.org.ua/v4/js/metro.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://bundle.run/buffer@6.0.3"></script>
