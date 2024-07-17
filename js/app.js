@@ -5,8 +5,6 @@ const axiosInstance = axios.create({
     baseURL: 'https://api.github.com',
     timeout: 10000, // Set a timeout (optional)
     headers: {
-        // just a public token with no real permissions to increase rate limit
-        'Authorization': 'Bearer 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'
     }
 });
 
