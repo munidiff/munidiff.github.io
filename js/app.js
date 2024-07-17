@@ -6,7 +6,7 @@ const axiosInstance = axios.create({
     timeout: 10000, // Set a timeout (optional)
     headers: {
         // just a public token with no real permissions to increase rate limit
-        'Authorization': 'Bearer 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'
+        'Authorization': 'Bearer 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'
     }
 });
 
