@@ -2,14 +2,18 @@
 const debug = true;
 
 const axiosInstance = axios.create({
-    baseURL: 'https://api.github.com',
-    timeout: 10000, // Set a timeout (optional)
-    headers: getHeaders()
+    baseURL: 'https://api.github.com'
 });
 
+async function setAxiosHeaders() {
+    const headers = await getHeaders();
+    if (headers.Authorization) {
+        axiosInstance.defaults.headers.common['Authorization'] = headers.Authorization;
+    }
+}
+
 function init() {
-    // Initialize Metro UI tabs
-    Metro.init();
+    setAxiosHeaders();
 
     // Parse the URL query parameters
     const queryParams = new URLSearchParams(window.location.search);
@@ -30,7 +34,7 @@ async function getHeaders() {
     if (token) {
         // Set the Authorization header
         result = {
-            "Authorization": `Bearer ${token}`
+            Authorization: `Bearer ${token}`
         };
         if (debug) {console.log('Token: ' + token);}
     }
@@ -156,7 +160,7 @@ async function showCommitDetails(repo, timeline, commit) {
             data-toggle-element="#${linkId}"
             data-no-close="true">
                 <div class="row">
-                    <div class="cell-6">
+                    <div class="cell-5">
                         <ul data-role="tabs" data-tabs-type="pills" data-expand="true">
                             <li><a href="#munidiff_${linkId}">munidiff</a></li>
                             <li><a href="#diff_${linkId}">diff</a></li>
@@ -168,11 +172,11 @@ async function showCommitDetails(repo, timeline, commit) {
                             <pre class="line-numbers" style="white-space: pre-wrap;"><code id="diffcode_${linkId}" class="language-diff diff-highlight"></code></pre>
                         </div>
                     </div>
-                    <div id="diagramdiff" class="cell-6">
+                    <div id="diagramdiff" class="cell-7">
                         <ul data-role="tabs" data-tabs-type="pills" data-expand="true">
                             <li><a href="#diagramdiff">diagram diff</a></li>
                         </ul>
-                        <div id="svgdiff_${linkId}">
+                        <div id="svgdiff_${linkId}" class="svgdiff">
                         </div>
                     </div>
                 </div>
@@ -260,6 +264,11 @@ async function showDiffData(metadata, filename, commit) {
     var fromModel = await getFileContents(getFileUrl(metadata, filename, previousCommit.sha));
     var toModel = await getFileContents(getFileUrl(metadata, filename, commit));
 
+    // pass an empty from model when no file exists in the previous commit (i.e. the file is new)
+    if (fromModel == null) {
+        fromModel = "";
+    }
+
     var request = {
         modelName: filename,
         fromModel: fromModel,
@@ -304,7 +313,11 @@ async function getFileContents(url) {
 
         return fileContent;
     } catch (error) {
-        console.error('Error fetching the file:', error);
+        if (error.response && error.response.status === 404) {
+            console.error('File not found:', url);
+        } else {
+            console.error('Error fetching the file:', error);
+        }
     }
     return null;
 }
