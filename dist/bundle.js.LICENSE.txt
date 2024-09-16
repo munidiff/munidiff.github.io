@@ -1,0 +1,35 @@
+/*!
+ * Datetime v1.0.0, (https://github.com/olton/DatetimeJS.git)
+ * Copyright 2021 by Serhii Pimenov (https://pimenov.com.ua)
+ * Datetime.js is a minimalist JavaScript library that parses, validates, manipulates, and displays dates and times for modern browsers with comfortable modern API.
+ * Build at 11/01/2021 21:09:55
+ * Licensed under MIT
+ !*/
+
+/*!
+ * The buffer module from node.js, for the browser.
+ *
+ * @author   Feross Aboukhadijeh <https://feross.org>
+ * @license  MIT
+ */
+
+/*! 
+ * Cake string library 1.0.0
+ * https://github.com/olton/cake
+ *
+ * Copyright 2020-2021 Serhii Pimenov
+ * Released under the MIT license
+ */
+
+/*! ieee754. BSD-3-Clause License. Feross Aboukhadijeh <https://feross.org/opensource> */
+
+/**
+ * Prism: Lightweight, robust, elegant syntax highlighting
+ *
+ * @license MIT <https://opensource.org/licenses/MIT>
+ * @author Lea Verou <https://lea.verou.me>
+ * @namespace
+ * @public
+ */
+
+//!node.hasClass("expanded");

@@ -1,5 +1,11 @@
-// app.js
-const debug = true;
+import axios from "axios";
+import "prismjs";
+import "prismjs/components/prism-diff";
+import "metro4";
+import buffer from "buffer";
+
+const debug = false;
+const useLocalBackend = false;
 
 const axiosInstance = axios.create({
     baseURL: 'https://api.github.com'
@@ -278,7 +284,7 @@ async function showDiffData(metadata, filename, commit) {
     if (debug) {console.log(request);}
 
     // Send request to Google Cloud Function
-    axios.post('https://europe-west9-delta-vial-428212-f3.cloudfunctions.net/timeline-modiff', request)
+    axios.post(getModiffBackendUrl(), request)
         .then(function (response) {
             if (debug) {console.log(response.data);}
 
@@ -335,7 +341,6 @@ function getCommitsUrl(repo) {
     return `/repos/${repo.owner}/${repo.repo}/commits`;
 }
 
-
 function getFileUrl(repo, file, commit) {
     return `/repos/${repo.owner}/${repo.repo}/contents/${file}?ref=${commit}`;
 }
@@ -355,3 +360,15 @@ function generateAPICommitUrl(githubUrl) {
 function escapeSpecialChars(str) {
     return str.replace(/&/g, '&amp;').replace(/>/g, '&gt;').replace(/</g, '&lt;');
 }
+
+function getModiffBackendUrl() {
+    if (useLocalBackend) {
+        return "http://localhost:8001/";
+    }
+    return "https://europe-west9-delta-vial-428212-f3.cloudfunctions.net/timeline-modiff";
+}
+
+window.init = init;
+window.fetchData = fetchData;
+window.showDiffData = showDiffData;
+window.showCommitDetails = showCommitDetails;

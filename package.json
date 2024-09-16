@@ -1,0 +1,25 @@
+{
+  "name": "munidiff-timeline",
+  "version": "1.0.0",
+  "description": "Munidiff timeline web explorer",
+  "dependencies": {
+    "@steelydylan/prism-diff-highlight": "1.0.4",
+    "axios": "1.7.7",
+    "buffer": "6.0.3",
+    "metro4": "4.5.1",
+    "prismjs": "1.29.0"
+  },
+  "devDependencies": {
+    "file-loader": "6.2.0",
+    "webpack": "5.94.0",
+    "webpack-cli": "5.1.4",
+    "webpack-dev-server": "5.1.0"
+  },
+  "author": "Alfonso de la Vega",
+  "license": "ISC",
+  "scripts": {
+    "build": "webpack --mode=production --node-env=production",
+    "build:dev": "webpack --mode=development",
+    "serve": "webpack serve --open --mode=development"
+  }
+}
