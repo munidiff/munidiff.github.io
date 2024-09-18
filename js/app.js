@@ -3,9 +3,9 @@ import "prismjs";
 import "prismjs/components/prism-diff";
 import "metro4";
 import buffer from "buffer";
+import config from "./config.js";
 
-const debug = false;
-const useLocalBackend = false;
+const debug = config.debug;
 
 const axiosInstance = axios.create({
     baseURL: 'https://api.github.com'
@@ -29,6 +29,7 @@ function init() {
     if (urlParam) {
         // Set the 'url' parameter value as the input value
         document.getElementById('urlInput').value = urlParam;
+        fetchData();
     }
 }
 
@@ -52,7 +53,7 @@ async function getHeaders() {
 
 async function fetchToken() {
     try {
-        const response = await axios.get('https://europe-north1-delta-vial-428212-f3.cloudfunctions.net/token');
+        const response = await axios.get(config.tokenUrl);
         return response.data; // Assuming the function returns the token directly
     } catch (error) {
         console.error('Error fetching token:', error);
@@ -362,10 +363,10 @@ function escapeSpecialChars(str) {
 }
 
 function getModiffBackendUrl() {
-    if (useLocalBackend) {
-        return "http://localhost:8001/";
+    if (config.useLocalBackend) {
+        return config.localBackendUrl;
     }
-    return "https://europe-west9-delta-vial-428212-f3.cloudfunctions.net/timeline-modiff";
+    return config.remoteBackendUrl;
 }
 
 window.init = init;
