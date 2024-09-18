@@ -7,6 +7,8 @@ import config from "./config.js";
 
 const debug = config.debug;
 
+const default_extensions = ['ecore'];
+
 const axiosInstance = axios.create({
     baseURL: 'https://api.github.com'
 });
@@ -308,7 +310,25 @@ async function showDiffData(metadata, filename, commit) {
 async function getTimelineMetadata(repo) {
     var url = getTimelineUrl(repo);
     var fileContents = await getFileContents(url);
-    var metadata = JSON.parse(fileContents);
+
+    var metadata;
+    if (fileContents == null) {
+        metadata = {
+            model_extensions: [],
+            metamodels: []
+        };
+    }
+    else {
+        metadata = JSON.parse(fileContents);
+    }
+
+    // add default extensions if not specified
+    for (const extension of default_extensions) {
+        if (!metadata.model_extensions.includes(extension)) {
+            metadata.model_extensions.push(extension);
+        }
+    }
+
     return metadata;
 }
 
