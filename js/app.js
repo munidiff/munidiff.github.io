@@ -67,18 +67,6 @@ async function fetchData() {
     // extract details from url
     const repo = getRepoDetails($("#urlInput").val());
 
-    // load timeline config file from repository
-    const timeline = await getTimelineMetadata(repo);
-
-    // metamodels in the timeline
-    var metamodels = [];
-    for (const metamodel of timeline.metamodels) {
-        var metamodelUrl = getFileUrl(repo, metamodel, repo.commit);
-        var metamodelContent = await getFileContents(metamodelUrl);
-        metamodels.push(metamodelContent);
-    }
-    repo.metamodels = metamodels;
-
     // list of commits
     axiosInstance.get(getCommitsUrl(repo)).then(function (response) {
         repo.commits = response.data;
@@ -88,24 +76,25 @@ async function fetchData() {
         container.innerHTML = '';
 
         repo.commits.forEach(commit => {
+
             const card = document.createElement('div');
             card.className = 'card';
             card.innerHTML = `
                 <div class="card-header">
-                    <img src="${commit.author.avatar_url}" alt="${commit.author.login}" class="avatar p-1" style="width:32px;height:32px;margin-right:10px"></div>
+                    <img src="${getAvatar(commit)}" class="avatar p-1" style="width:32px;height:32px;margin-right:10px"></div>
                 <div class="card-content p-2">
-                    <p><a href="${commit.author.html_url}" target="_blank">${commit.author.login}</a> authored on ${formatCommitDate(commit.commit.author.date)}.
+                    <p>${getAuthorDetails(commit)} authored on ${formatCommitDate(commit.commit.author.date)}.
                     <a href="${commit.html_url}" target="_blank">${commit.sha.substring(0,7)}</a></p>
                 </div>
             `;
 
             const link = document.createElement('a');
             link.href = '#'; // Prevent default link behavior
-            link.textContent = commit.commit.message;
+            link.textContent = getCommitMessage(commit);
 
             // Add click event listener with the file name
             link.addEventListener('click', function() {
-                showCommitDetails(repo, timeline, commit.sha)
+                showCommitDetails(repo, commit.sha)
             });
             card.children[0].appendChild(link);
 
@@ -113,10 +102,45 @@ async function fetchData() {
         });
     });
 
-    showCommitDetails(repo, timeline, repo.commit);
+    // clean previous commit details if any
+    const commitDetails = document.getElementById('commitDetails');
+    commitDetails.innerHTML = '';
+
+    if (repo.commit) {
+        showCommitDetails(repo, repo.commit);
+    }
 }
 
-async function showCommitDetails(repo, timeline, commit) {
+function getAvatar(commit) {
+    if (commit.author == null) {
+        return "assets/default-gravatar.png";
+    }
+    return commit.author.avatar_url;
+}
+
+function getAuthorDetails(commit) {
+    if (commit.author == null) {
+        return commit.commit.author.name;
+    }
+    return `<a href="${commit.author.html_url}" target="_blank">${commit.author.login}</a>`;
+}
+
+function getCommitMessage(commit) {
+    // if message has an extended description, ommit it
+    if (commit.commit.message.includes('\n\n')) {
+        return commit.commit.message.split('\n\n')[0];
+    }
+    return commit.commit.message;
+}
+
+function getCommitDescription(commit) {
+    if (commit.commit.message.includes('\n\n')) {
+        return commit.commit.message.split('\n\n')[1];
+    }
+    return null;
+}
+
+async function showCommitDetails(repo, commit) {
 
     var response = await axiosInstance.get(getCommitUrl(repo, commit));
     const commitData = response.data;
@@ -126,12 +150,17 @@ async function showCommitDetails(repo, timeline, commit) {
 
     const header = document.createElement('div');
     header.innerHTML = `
-        <h2>${commitData.commit.message}</h2>
-        <p>Committed by <a href="${commitData.author.html_url}" target="_blank">${commitData.author.login}</a> on ${formatCommitDate(commitData.commit.author.date)}.
-        <a href="${commitData.html_url}" target="_blank">${commitData.sha.substring(0,7)}</a></p>
+        <h2>${getCommitMessage(commitData)}</h2>
+        ${getCommitDescription(commitData) ? `<p>${getCommitDescription(commitData)}</p>` : ''}
+        <p><em>Committed by ${getAuthorDetails(commitData)} on ${formatCommitDate(commitData.commit.author.date)}.
+        <a href="${commitData.html_url}" target="_blank">${commitData.sha.substring(0,7)}</a></em></p>
         <p>List of changed model files:</p>
     `;
     commitDetails.appendChild(header);
+
+    // load timeline config file from repository
+    const timeline = await getTimelineMetadata(repo);
+    repo.timeline = timeline;
 
     // display the list of model files (with the extensions specified in the timeline)
     const changedFiles = commitData.files.map(file => file.filename);
@@ -240,25 +269,32 @@ function getPreviousCommit(commits, commit) {
     return previousCommit;
 }
 
+function isValidGitHubRepoUrl(url) {
+    const regex = /^https:\/\/github\.com\/[^\/]+\/[^\/]+\/?.*$/;
+    return regex.test(url);
+}
+
 function getRepoDetails(url) {
+    if (!isValidGitHubRepoUrl(url)) {
+        return null;
+    }
+
     // Extract the parts of the URL after 'github.com/'
     const parts = url.split('github.com/')[1].split('/');
 
-    // Extract the owner, repo, and commit hash
-    const owner = parts[0];
-    const repo = parts[1];
-    const commit = parts[3];
+    var metadata = {};
+    metadata.owner = parts[0];
+    metadata.repo = parts[1];
 
-    var metadata = {
-        owner: owner,
-        repo: repo,
-        commit: commit
-    };
+    // if a commit hash is provided in the URL
+    if (parts.length >= 4 && parts[2] == 'commit') {
+        metadata.commit = parts[3];
+    }
 
     return metadata;
 }
 
-async function showDiffData(metadata, filename, commit) {
+async function showDiffData(repo, filename, commit) {
 
     const linkId = removeNonAlphaNumeric(filename);
 
@@ -268,21 +304,30 @@ async function showDiffData(metadata, filename, commit) {
         return;
     }
 
-    var previousCommit = getPreviousCommit(metadata.commits, commit);
+    var previousCommit = getPreviousCommit(repo.commits, commit);
 
-    var fromModel = await getFileContents(getFileUrl(metadata, filename, previousCommit.sha));
-    var toModel = await getFileContents(getFileUrl(metadata, filename, commit));
+    var fromModel = await getFileContents(getFileUrl(repo, filename, previousCommit.sha));
+    var toModel = await getFileContents(getFileUrl(repo, filename, commit));
 
     // pass an empty from model when no file exists in the previous commit (i.e. the file is new)
     if (fromModel == null) {
         fromModel = "";
     }
 
+    // load metamodel contents of the current commit
+    // FIXME: might have incompatible changes with respect to the previous commit
+    var metamodels = [];
+    for (const metamodel of repo.timeline.metamodels) {
+        var metamodelUrl = getFileUrl(repo, metamodel, commit);
+        var metamodelContent = await getFileContents(metamodelUrl);
+        metamodels.push(metamodelContent);
+    }
+
     var request = {
         modelName: filename,
         fromModel: fromModel,
         toModel: toModel,
-        metamodels: metadata.metamodels
+        metamodels: metamodels
     }
     if (debug) {console.log(request);}
 
@@ -364,18 +409,6 @@ function getCommitsUrl(repo) {
 
 function getFileUrl(repo, file, commit) {
     return `/repos/${repo.owner}/${repo.repo}/contents/${file}?ref=${commit}`;
-}
-
-function generateAPICommitUrl(githubUrl) {
-    // Extract the parts of the URL after 'github.com/'
-    const parts = githubUrl.split('github.com/')[1].split('/');
-
-    // Extract the owner, repo, and commit hash
-    const owner = parts[0];
-    const repo = parts[1];
-    const commit = parts[3];
-
-    return `/repos/${owner}/${repo}/commits/${commit}`;
 }
 
 function escapeSpecialChars(str) {
