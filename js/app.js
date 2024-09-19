@@ -264,18 +264,20 @@ function endsWithExtension(filename, extensions) {
     return false;
 }
 
-function getPreviousCommit(commits, commit) {
-    var previousCommit = null;
-    // FIXME: this list of commits is not complete, if the commit is
-    // old enough, it will not be found in the list
-    for (var i = 0; i < commits.length; i++) {
-        // if we find the commit and it's not the first one in the list
-        if (commits[i].sha == commit && i < commits.length - 1) {
-            previousCommit = commits[i + 1];
-            break;
+async function getPreviousCommit(repo, commitSha) {
+    return await axiosInstance.get(getCommitUrl(repo, commitSha)).then(
+        function (response) {
+            var commit = response.data;
+
+            // if the commit has multiple parents (e.g. a merge commit), we
+            // use the first one, as it corresponds to the branch where the
+            // changes were merged to (such as the main branch)
+            if (commit.parents && commit.parents.length >= 1) {
+                return commit.parents[0].sha;
+            }
+            return null;
         }
-    }
-    return previousCommit;
+    );
 }
 
 function isValidGitHubRepoUrl(url) {
@@ -315,9 +317,9 @@ async function showDiffData(repo, filename, commit) {
 
     var fromModel = null;
 
-    var previousCommit = getPreviousCommit(repo.commits, commit);
+    var previousCommit = await getPreviousCommit(repo, commit);
     if (previousCommit !== null) {
-        fromModel = await getFileContents(getFileUrl(repo, filename, previousCommit.sha));
+        fromModel = await getFileContents(getFileUrl(repo, filename, previousCommit));
     }
 
     // pass an empty from model when no file exists in the previous commit (i.e. the file is new)
