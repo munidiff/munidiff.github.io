@@ -68,7 +68,13 @@ async function fetchData() {
     const repo = getRepoDetails($("#urlInput").val());
 
     // list of commits
-    axiosInstance.get(getCommitsUrl(repo)).then(function (response) {
+    axiosInstance.get(getCommitsUrl(repo),
+        {
+            params: {
+                per_page: 100
+            }
+        }
+    ).then(function (response) {
         repo.commits = response.data;
 
         // display the list of commits
@@ -103,8 +109,8 @@ async function fetchData() {
     });
 
     // clean previous commit details if any
-    const commitDetails = document.getElementById('commitDetails');
-    commitDetails.innerHTML = '';
+    document.getElementById('commitDetails').innerHTML = '';
+    document.getElementById('modelsList').innerHTML = '';
 
     if (repo.commit) {
         showCommitDetails(repo, repo.commit);
