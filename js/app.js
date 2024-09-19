@@ -63,9 +63,22 @@ async function fetchToken() {
     }
 }
 
+function showError(message) {
+    Metro.notify.create(message, "Error", {
+        cls: "alert",
+        keepOpen: false,
+        width: 300,
+        duration: 200,
+        timeout: 2000
+    });
+}
+
 async function fetchData() {
     // extract details from url
     const repo = getRepoDetails($("#urlInput").val());
+    if (repo === null) {
+        return;
+    }
 
     // list of commits
     axiosInstance.get(getCommitsUrl(repo),
@@ -106,6 +119,15 @@ async function fetchData() {
 
             container.appendChild(card);
         });
+    }).catch(function (error) {
+        switch (error.response.status) {
+            case 404:
+                showError('404: URL not found');
+                return;
+            default:
+                showError(`${error.response.status}: Error fetching URL details`);
+                return;
+        }
     });
 
     // clean previous commit details if any
@@ -287,6 +309,7 @@ function isValidGitHubRepoUrl(url) {
 
 function getRepoDetails(url) {
     if (!isValidGitHubRepoUrl(url)) {
+        showError('Invalid GitHub URL');
         return null;
     }
 
