@@ -260,8 +260,11 @@ function endsWithExtension(filename, extensions) {
 
 function getPreviousCommit(commits, commit) {
     var previousCommit = null;
+    // FIXME: this list of commits is not complete, if the commit is
+    // old enough, it will not be found in the list
     for (var i = 0; i < commits.length; i++) {
-        if (commits[i].sha == commit) {
+        // if we find the commit and it's not the first one in the list
+        if (commits[i].sha == commit && i < commits.length - 1) {
             previousCommit = commits[i + 1];
             break;
         }
@@ -304,15 +307,19 @@ async function showDiffData(repo, filename, commit) {
         return;
     }
 
-    var previousCommit = getPreviousCommit(repo.commits, commit);
+    var fromModel = null;
 
-    var fromModel = await getFileContents(getFileUrl(repo, filename, previousCommit.sha));
-    var toModel = await getFileContents(getFileUrl(repo, filename, commit));
+    var previousCommit = getPreviousCommit(repo.commits, commit);
+    if (previousCommit !== null) {
+        fromModel = await getFileContents(getFileUrl(repo, filename, previousCommit.sha));
+    }
 
     // pass an empty from model when no file exists in the previous commit (i.e. the file is new)
-    if (fromModel == null) {
+    if (fromModel === null) {
         fromModel = "";
     }
+
+    var toModel = await getFileContents(getFileUrl(repo, filename, commit));
 
     // load metamodel contents of the current commit
     // FIXME: might have incompatible changes with respect to the previous commit
