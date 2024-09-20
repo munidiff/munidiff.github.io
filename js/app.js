@@ -80,13 +80,17 @@ async function fetchData() {
         return;
     }
 
-    // list of commits
-    axiosInstance.get(getCommitsUrl(repo),
-        {
-            params: {
-                per_page: 100
-            }
-        }
+    // get list of commits
+    var params = {
+        per_page: 100
+    }
+    // if it's a file URL, request only the commits associated with the file
+    if (repo.file) {
+        params.path = repo.file;
+    }
+    axiosInstance.get(
+            getCommitsUrl(repo),
+            { params: params }
     ).then(function (response) {
         repo.commits = response.data;
 
@@ -119,6 +123,11 @@ async function fetchData() {
 
             container.appendChild(card);
         });
+
+        // if it's a file URL, show the details of the first commit
+        if (repo.file) {
+            showCommitDetails(repo, repo.commits[0].sha);
+        }
     }).catch(function (error) {
         switch (error.response.status) {
             case 404:
@@ -316,16 +325,26 @@ function getRepoDetails(url) {
     // Extract the parts of the URL after 'github.com/'
     const parts = url.split('github.com/')[1].split('/');
 
-    var metadata = {};
-    metadata.owner = parts[0];
-    metadata.repo = parts[1];
+    var repo = {};
+    repo.owner = parts[0];
+    repo.repo = parts[1];
 
     // if a commit hash is provided in the URL
-    if (parts.length >= 4 && parts[2] == 'commit') {
-        metadata.commit = parts[3];
+    if (parts.length >= 4) {
+        if (parts[2] == 'commit') {
+            // commit URL
+            repo.commit = parts[3];
+        }
+        else if (parts.length >= 5 && parts[2] == "blob" || parts[2] == "commits") {
+            // file URL
+            // the 4th element is the branch (ignored for now), the next ones are the file path
+            // TODO: attend for potential parameters (after ?) in the URL
+            repo.file = parts.slice(4).join('/');
+            if (debug) {console.log('File URL: ' + repo.file);}
+        }
     }
 
-    return metadata;
+    return repo;
 }
 
 async function showDiffData(repo, filename, commit) {
