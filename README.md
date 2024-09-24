@@ -28,14 +28,14 @@ Steps:
 
 1. Checkout the backend's [repository](https://github.com/alfonsodelavega/modiff).
 2. Run `mvn function:run` from a terminal.
-3. To instruct the frontend to use the local service, modify the `useLocalBackend` variable at the start of the `js/app.js` file from this repository:
+3. To instruct the frontend to use the local service, modify the `useLocalBackend` property at the `js/config.js` file from this repository:
 
 ```javascript
-const useLocalBackend = true;
+  useLocalBackend: true,
 ```
 
 ### Run the frontend locally
 
 1. After checking out the code, run `npm install`.
 2. Run a web server and watch for changes with `npm run serve` (uses webpack, details in `package.json`)
-3. A web tab should have opened at `localhost:9000`
+3. A web browser tab should have opened at `localhost:9000`
