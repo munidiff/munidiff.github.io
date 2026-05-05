@@ -4,7 +4,7 @@
   "description": "Munidiff timeline web explorer",
   "dependencies": {
     "@steelydylan/prism-diff-highlight": "1.0.4",
-    "axios": "1.7.7",
+    "axios": "1.16.0",
     "buffer": "6.0.3",
     "metro4": "4.5.1",
     "prismjs": "1.29.0"

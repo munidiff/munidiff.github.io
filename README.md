@@ -39,3 +39,5 @@ Steps:
 1. After checking out the code, run `npm install`.
 2. Run a web server and watch for changes with `npm run serve` (uses webpack, details in `package.json`)
 3. A web browser tab should have opened at `localhost:9000`
+
+Other npm/webpack commands can be found in the `package.json` file.
